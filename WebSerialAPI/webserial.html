@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <body>
+       <p><button id="deviceConnect">Connect</button></p>
+        送信するデータ：<button id="sendData">Send</button><br>
+        <form>
+            <textarea name="setText" rows="5" cols="50" wrap="hard" type="text" id="setText"></textarea>
+        </form>
+        
+        <p>受信したデータ：<br>
+        <textarea cols="80" rows="6" id="outputArea" readonly></textarea></p>
+    </body>
+<head>
+    <meta charset="utf-8" />
+    <script>
+        let port;
+
+        //Connect
+        document.getElementById("deviceConnect").onclick =async() =>{
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+
+                while (port.readable) {
+                    const reader = port.readable.getReader();
+
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) {
+                                addSerial("Canceled\n");
+                                break;
+                            }
+                            const inputValue = new TextDecoder().decode(value);
+                            addSerial(inputValue);
+                        }
+                    } catch (error) {
+                        addSerial("Error: Read" + error + "\n");
+                    } finally {
+                        reader.releaseLock();
+                    }
+                }
+            } catch (error) {
+                addSerial("Error: Open" + error + "\n");
+            }
+            
+        };
+
+        function addSerial(msg) {
+            var textarea = document.getElementById('outputArea');
+            textarea.value += msg;
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+
+        document.getElementById("sendData").onclick = async() =>{
+            let text = document.getElementById("setText");
+            let textValue = text.value;
+            document.getElementById("setText").value = "";
+
+            const encoder = new TextEncoder();
+            const writer = port.writable.getWriter();
+            await writer.write(encoder.encode(textValue+"\n"));
+            writer.releaseLock();
+        };
+    </script>
+</head>
+</html>
