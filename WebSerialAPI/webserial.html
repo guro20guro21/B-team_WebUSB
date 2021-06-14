@@ -8,7 +8,7 @@
         </form>
         
         <p>受信したデータ：<br>
-        <textarea cols="80" rows="6" id="outputArea" readonly></textarea></p>
+        <textarea  rows="5" cols="50" id="outputArea" readonly></textarea></p>
     </body>
 <head>
     <meta charset="utf-8" />
@@ -57,9 +57,14 @@
             let textValue = text.value;
             document.getElementById("setText").value = "";
 
+            //split text
+            let splitText = textValue.match(/.{1,16}/g);
+
             const encoder = new TextEncoder();
             const writer = port.writable.getWriter();
-            await writer.write(encoder.encode(textValue+"\n"));
+            for(let i = 0; i < splitText.length; i++) {
+                await writer.write(encoder.encode(splitText[i]+"\n"));
+            }
             writer.releaseLock();
         };
     </script>
