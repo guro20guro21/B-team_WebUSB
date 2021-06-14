@@ -19,7 +19,7 @@
         const send_receive = async (device) => {
             const transport = new DAPjs.WebUSB(device);
             const target = new DAPjs.DAPLink(transport);
-; 
+
             //テキスト送信
             const LEDtext = document.getElementById("setText");
             const LEDtextValue = LEDtext.value;
