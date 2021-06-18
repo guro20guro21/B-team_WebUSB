@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html>
+<body>
+    <p>送信するデータ：</p>
+    <form>
+        <textarea name="setText" rows="5" cols="50" wrap="hard" type="text" id="setText"></textarea>
+    </form>
+    <p><button id="sendData">Send</button></p>
+
+    <script type="text/javascript" src="../dist/dap.umd.js"></script>
+    <script>
+        //n秒待つ
+        function delay(n){
+            return new Promise(function(resolve){
+                setTimeout(resolve,n*1000);
+            });
+        }
+        //シリアル送受信
+        const send_receive = async (device) => {
+            const transport = new DAPjs.WebUSB(device);
+            const target = new DAPjs.DAPLink(transport);
+
+            //テキスト送信
+            const LEDtext = document.getElementById("setText");
+            const LEDtextValue = LEDtext.value;
+            try{
+                await target.connect();
+                console.log("connect!");
+                await target.serialWrite(LEDtextValue+"\n");
+                await target.disconnect();
+                console.log("disconnect!");
+            } catch(error) {
+                console.error(error.message || error);
+            };
+
+            //テキスト受信
+            target.on(DAPjs.DAPLink.EVENT_SERIAL_DATA, data => {
+                console.log(data);
+            });
+            target.startSerialRead();
+            await delay(10);
+            target.stopSerialRead();
+        };
+
+        //connect
+        document.getElementById("sendData").onclick = async() =>{
+            const device = await navigator.usb.requestDevice({
+                filters: [{vendorId: 0xD28}]
+            });
+            send_receive(device);
+        };
+
+    </script>
+</body>
+</html>
