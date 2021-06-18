@@ -15,15 +15,15 @@
     <script>
         let port;
 
-        //sleep for javascript
+        // sleep for javascript
         const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         
-        //Connect
+        // Connect
         document.getElementById("deviceConnect").onclick =async() =>{
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 115200 });
-                //read
+                // read
                 while (port.readable) {
                     const reader = port.readable.getReader();
 
@@ -48,19 +48,19 @@
             }
             
         };
-        //output
+        // output
         function addSerial(msg) {
             var textarea = document.getElementById('outputArea');
             textarea.value += msg;
             textarea.scrollTop = textarea.scrollHeight;
         }
-        //write
+        // write
         document.getElementById("writeData").onclick = async() =>{
             let text = document.getElementById("setText");
             let textValue = text.value;
             document.getElementById("setText").value = "";
             
-            //split text
+            // split text
             let splitText = textValue.match(/.{1,16}/g);
             console.log(splitText);
 
