@@ -32,7 +32,6 @@
 
                 for (let i = 0; i < splitText.length; i++) {
                     await target.serialWrite(splitText[i] + "\n");
-                    await delay(50);
                 }
 
                 await target.disconnect();
