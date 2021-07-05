@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        write:<button id="writeData">write start</button><br>
+        <form>
+            <textarea name="setText" rows="5" cols="50" wrap="hard" type="text" id="setText"></textarea>
+        </form>
+    </body>
+<head>
+    <meta charset="utf-8" />
+    <script>
+        document.getElementById("writeData").onclick = async() =>{
+            let text = document.getElementById("setText");
+            let textValue = text.value;
+            document.getElementById("setText").value = "";
+            // split text
+            let splitText = textValue.match(/.{1,10}/g);
+            console.log(splitText);
+
+            const encoder = new TextEncoder();
+            // 12バイト分のArrayBufferを用意
+            let buffer = new ArrayBuffer(12);
+            
+            for(let i = 0; i < splitText.length; i++) {
+                let dataview = new DataView(buffer);
+                for(let j = 0; j < splitText[i].length; j++){ // 1文字ずつエンコードして格納
+                    await dataview.setUint8(j, encoder.encode(splitText[i][j]));
+                }
+                // チェックサムの計算
+                // Uint8にエンコードしたあとに文字コードを全て加算
+                let sumValue = encoder.encode(splitText[i]).reduce((sum, element) => sum + element, 0);
+                checksum = sumValue % 256; // 8ビットに収まるようにする
+                await dataview.setUint8(10,checksum); // チェックサムを送信データにくっつける
+                await dataview.setUint8(11,encoder.encode("\n")); // 終端に改行文字を追加
+                console.log(buffer);
+            }
+        };
+    </script>
+</head>
+</html>
