@@ -7,7 +7,8 @@ void receive(){
         while(true){
                 // 固定長ではなく現在バッファにあるデータ長を読み取るように変更
                 // これでASYNCでもSYNC_SLEEPでもどちらでも正しく動く
-                result = result + uBit.serial.read(uBit.serial.rxBufferedSize(), SYNC_SLEEP);                // 譲らないとコンテクストが切り替わらないことに注意
+                result = result + uBit.serial.read(uBit.serial.rxBufferedSize(), SYNC_SLEEP);
+                // 譲らないとコンテクストが切り替わらないことに注意
                 fiber_sleep(1);
         }
 }
