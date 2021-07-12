@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <body>
+       <p><button id="deviceConnect">Connect</button></p>
+        write:<button id="writeData">write start</button><br>
+        <form>
+            <textarea name="setText" rows="5" cols="50" wrap="hard" type="text" id="setText"></textarea>
+        </form>
+        
+        <p>read:<br>
+        <textarea  rows="5" cols="50" id="outputArea" readonly></textarea></p>
+    </body>
+<head>
+    <meta charset="utf-8" />
+    <script>
+        let port;
+
+        //Connect
+        document.getElementById("deviceConnect").onclick =async() =>{
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+                //read
+                while (port.readable) {
+                    const reader = port.readable.getReader();
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) {
+                                addSerial("Canceled\n");
+                                break;
+                            }
+                            const inputValue = new TextDecoder().decode(value);
+                            addSerial(inputValue);
+                        }
+                    } catch (error) {
+                        addSerial("Error: Read" + error + "\n");
+                    } finally {
+                        reader.releaseLock();
+                    }
+                }
+            } catch (error) {
+                addSerial("Error: Open" + error + "\n");
+            }
+            
+        };
+        //output
+        function addSerial(msg) {
+            let textarea = document.getElementById('outputArea');
+            textarea.value += msg;
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+        //write
+        document.getElementById("writeData").onclick = async() =>{
+            let text = document.getElementById("setText");
+            let textValue = text.value;
+            document.getElementById("setText").value = "";
+            
+            //split text
+            let a = textValue.length % 16;
+            for (; (a != 0) && (a < 16); a++) {
+                textValue = textValue + " ";
+            }
+            let splitText = textValue.match(/.{1,16}/g);
+            console.log(splitText);
+
+            const encoder = new TextEncoder();
+            let buffer = new ArrayBuffer(18); // split+2
+            const writer = port.writable.getWriter();
+            for (let i = 0; i < splitText.length; i++) {
+                let dataview = new DataView(buffer);
+                for (let j = 0; j < splitText[i].length; j++) {
+                    // encode 1 character
+                    await dataview.setUint8(j, encoder.encode(splitText[i][j]));
+                }
+                // checksum
+                let sumValue = encoder.encode(splitText[i]).reduce((sum, element) => sum + element, 0);
+                checksum = sumValue % 256; // 8bit
+
+                await dataview.setUint8(16,checksum);
+                //await dataview.setUint8(17,encoder.encode("\n"));
+                console.log(buffer);
+                await writer.write(buffer);
+            }
+            writer.releaseLock();
+        };
+    </script>
+</head>
+</html>
