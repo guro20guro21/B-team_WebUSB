@@ -57,8 +57,8 @@
             document.getElementById("setText").value = "";
             
             //split text
-            let a = textValue.length % 16;
-            for (; (a != 0) && (a < 16); a++) {
+            let padRight = textValue.length % 16;
+            for (; (padRight != 0) && (padRight < 16); padRight++) {
                 textValue = textValue + " ";
             }
             let splitText = textValue.match(/.{1,16}/g);
