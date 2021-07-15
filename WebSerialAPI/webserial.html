@@ -65,7 +65,7 @@
             console.log(splitText);
 
             const encoder = new TextEncoder();
-            let buffer = new ArrayBuffer(18); // split+2
+            let buffer = new ArrayBuffer(17); // split+1
             const writer = port.writable.getWriter();
             for (let i = 0; i < splitText.length; i++) {
                 let dataview = new DataView(buffer);
