@@ -14,9 +14,12 @@
     <meta charset="utf-8" />
     <script>
         let port;
+        let flagNG = false;
+        let textValue = "";
 
         //Connect
-        document.getElementById("deviceConnect").onclick =async() =>{
+        document.getElementById("deviceConnect").onclick = async() =>{
+            let writeFinish = 0;
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 9600 });
@@ -32,17 +35,23 @@
                             }
                             const inputValue = new TextDecoder().decode(value);
                             addSerial(inputValue);
+                            if ((inputValue == "A") && (writeFinish < 5)) {
+                                console.log("NG");
+                                flagNG = true;
+                                writeFinish++;
+                                await writeText();
+                            }
                         }
                     } catch (error) {
                         addSerial("Error: Read" + error + "\n");
                     } finally {
                         reader.releaseLock();
+                        
                     }
                 }
             } catch (error) {
                 addSerial("Error: Open" + error + "\n");
             }
-            
         };
         //output
         function addSerial(msg) {
@@ -50,39 +59,42 @@
             textarea.value += msg;
             textarea.scrollTop = textarea.scrollHeight;
         }
-        //write
+        //write func
+        const writeText = async () => {
+            console.log("hello");
+            if (flagNG) {//split text
+                let padRight = textValue.length % 16;
+                for (; (padRight != 0) && (padRight < 16); padRight++) {
+                    textValue = textValue + " ";
+                }
+                let splitText = textValue.match(/.{1,16}/g);
+                console.log(splitText);
+
+                const encoder = new TextEncoder();
+                let buffer = new ArrayBuffer(17); // split+1
+                const writer = port.writable.getWriter();
+                for (let i = 0; i < splitText.length; i++) {
+                    let dataview = new DataView(buffer);
+                    for (let j = 0; j < splitText[i].length; j++) {
+                        // encode 1 character
+                        dataview.setUint8(j, encoder.encode(splitText[i][j]));
+                    }
+                    // checksum
+                    let sumValue = encoder.encode(splitText[i]).reduce((sum, element) => sum + element, 0);
+                    let checksum = sumValue % 256; // 8bit
+
+                    dataview.setUint8(16,checksum);
+                    console.log(buffer);
+                    await writer.write(buffer);
+                }
+                writer.releaseLock();
+            }
+        };
         document.getElementById("writeData").onclick = async() =>{
             let text = document.getElementById("setText");
-            let textValue = text.value;
-            document.getElementById("setText").value = "";
-            
-            //split text
-            let padRight = textValue.length % 16;
-            for (; (padRight != 0) && (padRight < 16); padRight++) {
-                textValue = textValue + " ";
-            }
-            let splitText = textValue.match(/.{1,16}/g);
-            console.log(splitText);
-
-            const encoder = new TextEncoder();
-            let buffer = new ArrayBuffer(17); // split+1
-            const writer = port.writable.getWriter();
-            for (let i = 0; i < splitText.length; i++) {
-                let dataview = new DataView(buffer);
-                for (let j = 0; j < splitText[i].length; j++) {
-                    // encode 1 character
-                    await dataview.setUint8(j, encoder.encode(splitText[i][j]));
-                }
-                // checksum
-                let sumValue = encoder.encode(splitText[i]).reduce((sum, element) => sum + element, 0);
-                checksum = sumValue % 256; // 8bit
-
-                await dataview.setUint8(16,checksum);
-                //await dataview.setUint8(17,encoder.encode("\n"));
-                console.log(buffer);
-                await writer.write(buffer);
-            }
-            writer.releaseLock();
+            textValue = text.value;
+            flagNG = true;
+            await writeText();
         };
     </script>
 </head>
