@@ -17,3 +17,4 @@ https://github.com/ARMmbed/dapjs ←ここから手に入れてください
 ## micro:bit
 コーディングはmakecodeでやっていたが、チェックサムの実装後はc++で行うことに変更。
 /microbit/main.cppを使ってください
+チェックサムに異常があった時の挙動を試したいときはNG_check_main.cpp を使うと強制的に異常を起こせます。(送信データは33文字以上入力してください)
