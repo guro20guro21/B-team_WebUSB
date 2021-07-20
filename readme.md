@@ -16,4 +16,4 @@ https://github.com/ARMmbed/dapjs ←ここから手に入れてください
 
 ## micro:bit
 コーディングはmakecodeでやっていたが、チェックサムの実装後はc++で行うことに変更。
-/micro:bit 内のmain.cppを使ってください
+/microbit/main.cppを使ってください
