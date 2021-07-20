@@ -1,4 +1,4 @@
-## This is a test repository. 
+## Web~~USB~~ Serial APIを使ったmicro:bitとの通信
 詳細→ https://hackmd.io/@maple117/rJTVJclIO
 
 WebUSB API(Web Serial API)を使ってウェブブラウザとmicro:bitとの通信(シリアル通信)を行うのが目的です。
@@ -17,4 +17,4 @@ https://github.com/ARMmbed/dapjs ←ここから手に入れてください
 ## micro:bit
 コーディングはmakecodeでやっていたが、チェックサムの実装後はc++で行うことに変更。
 /microbit/main.cppを使ってください
-チェックサムに異常があった時の挙動を試したいときはNG_check_main.cpp を使うと強制的に異常を起こせます。(送信データは33文字以上入力してください)
+チェックサムに異常があった時の挙動を試したいときはNGcheck_main.cpp を使うと強制的に異常を起こせます。(送信データは33文字以上入力してください)
