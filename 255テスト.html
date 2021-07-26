@@ -61,17 +61,19 @@
             textarea.scrollTop = textarea.scrollHeight;
         }
 
+        const encoder = new TextEncoder();
         //write function
         const writeText = async () => {
         // テスト用に先頭に255を付けた１行を最初に送る部分
             const writer = port.writable.getWriter();
-            let test = new ArrayBuffer(17);
+            let test = new ArrayBuffer(18);
             let testDataview = new DataView(test);
             testDataview.setUint8(0,255);
             for (let i=1; i<16; i++){
                 testDataview.setUint8(i, 32);
             }
-            testDataview.setUint8(16,223);
+            testDataview.setUint8(16,227);
+            testDataview.setUint8(17, encoder.encode("\n"));
             await writer.write(test);
         // ここまで
             let padRight = textValue.length % SplitValue;
@@ -82,8 +84,7 @@
             let splitText = textValue.match(reg);
             console.log(splitText);
 
-            const encoder = new TextEncoder();
-            let buffer = new ArrayBuffer(SplitValue+1); // SplitValue+α = 17
+            let buffer = new ArrayBuffer(SplitValue+2); // SplitValue+α = 17
             
             for (let i = 0; i < splitText.length; i++) {
                 let dataview = new DataView(buffer);
@@ -93,9 +94,10 @@
                 }
                 // checksum
                 let sumValue = encoder.encode(splitText[i]).reduce((sum, element) => sum + element, 0);
-                let checksum = sumValue % 256; // 8bit
+                let checksum = sumValue % 254; // 8bit
 
                 dataview.setUint8(SplitValue,checksum);
+                dataview.setUint8(SplitValue+1, encoder.encode("\n"));
                 console.log(buffer);
                 await writer.write(buffer);
             }
