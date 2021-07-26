@@ -61,7 +61,7 @@ void receive_L(){
                 if(recL == count){
                         uBit.serial.printf("Complete\n");
                 }else{
-                        uBit.serial.printf("A\n", count);
+                        uBit.serial.printf("A\n");
                 }
                 fiber_sleep(1000);
 	}
