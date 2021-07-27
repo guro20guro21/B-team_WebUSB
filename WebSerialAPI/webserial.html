@@ -16,6 +16,7 @@
         let port;
         let textValue = "";
         const SplitValue = 16;
+        const HeaderValue = 2; // ["ID","Lines"]
 
         //Connect
         document.getElementById("deviceConnect").onclick = async() =>{
@@ -63,42 +64,36 @@
 
         //write function
         const writeText = async () => {
-            //padding right
-            let padRight = textValue.length % SplitValue;
-            for (; (padRight != 0) && (padRight < SplitValue); padRight++) {
-                textValue = textValue + " ";
-            }
-            let reg = new RegExp('.{' + SplitValue + '}', "g");
+            let reg = new RegExp('.{1,' + SplitValue + '}', "g"); //1~16
             let splitText = textValue.match(reg);
             console.log(splitText);
 
             //////////////////////////////////////////////////////////
             //header text
             const encoder = new TextEncoder();
-            let buffer = new ArrayBuffer(SplitValue+2);// SplitValue+α
+            let header = new ArrayBuffer(HeaderValue+2);// HeaderValue+α
             const writer = port.writable.getWriter();
-            let dataview = new DataView(buffer);
+            let dataviewHe = new DataView(header);
 
-            dataview.setUint8(0,255); //header id
-            dataview.setUint8(1,(splitText.length+1)); //write lines
-            for (let i = 2; i < SplitValue; i++){
-                dataview.setUint8(i, encoder.encode(" "));
-            }
+            dataviewHe.setUint8(0,255); //header id
+            dataviewHe.setUint8(1,(splitText.length+1)); //write lines
             let checksum = 0;
-            for (let i = 0; i < SplitValue; i++) {
-                checksum += dataview.getUint8(i);
+            for (let i = 0; i < HeaderValue; i++) {
+                checksum += dataviewHe.getUint8(i);
             }
             checksum = checksum % 254; // 8bit
             if (checksum == 0) {
                 checksum = 254;
             }
-            await dataview.setUint8(SplitValue,checksum);
-            await dataview.setUint8(SplitValue+1, encoder.encode("\n"));
-            console.log(buffer);
-            await writer.write(buffer);
+            await dataviewHe.setUint8(HeaderValue,checksum);
+            await dataviewHe.setUint8(HeaderValue+1, encoder.encode("\n"));
+            console.log(header);
+            await writer.write(header);
             //////////////////////////////////////////////////////////
 
             for (let i = 0; i < splitText.length; i++) {
+                let buffer = new ArrayBuffer(splitText[i].length+2);// variable length
+                let dataview = new DataView(buffer);
                 for (let j = 0; j < splitText[i].length; j++) {
                     // encode 1 character
                     dataview.setUint8(j, encoder.encode(splitText[i][j]));
@@ -110,8 +105,8 @@
                     checksum = 254;
                 }
 
-                await dataview.setUint8(SplitValue,checksum);
-                await dataview.setUint8(SplitValue+1, encoder.encode("\n"));
+                await dataview.setUint8(splitText[i].length,checksum);
+                await dataview.setUint8(splitText[i].length+1, encoder.encode("\n"));
                 console.log(buffer);
                 await writer.write(buffer);
             }
