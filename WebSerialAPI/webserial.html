@@ -17,6 +17,7 @@
         let textValue = "";
         const SplitValue = 16;
         const HeaderValue = 2; // ["ID","Lines"]
+        let reWrite_cnt = 0;
 
         // LineBreak
         class LineBreakTransformer {
@@ -34,9 +35,9 @@
             }
         }
 
+
         //Connect
         document.getElementById("deviceConnect").onclick = async() =>{
-            let writeFinish = 0;
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 9600 });
@@ -61,10 +62,10 @@
                             console.log(value);
                             //addSerial(inputValue);
                             addSerial(value + "\n");
-                            //if ((inputValue == "A") && (writeFinish < 5)) {
-                            if ((value.match(/Recieve Error!/)) && (writeFinish < 5)) {
-                                console.log("Recieve Error!");
-                                writeFinish++;
+                            //if ((inputValue == "A") && (reWrite_cnt < 5)) {
+                            if ((value.match(/Receive Error!/)) && (reWrite_cnt < 5)) {
+                                console.log("Receive Error!");
+                                reWrite_cnt++;
                                 await writeText();
                             }
                         }
@@ -139,6 +140,7 @@
         
         //write button event
         document.getElementById("writeData").onclick = async() =>{
+            reWrite_cnt = 0;
             let text = document.getElementById("setText");
             textValue = text.value;
             await writeText();
