@@ -11,7 +11,7 @@ void header(){
 	recL = str.charAt(1); // receive Line
 	result = ""; // clear
         count = 0; // count reset
-	uBit.serial.printf("^^\n"); // operation check
+	uBit.serial.printf("header OK\n"); // operation check
 }
 
 void receive(){
@@ -29,7 +29,6 @@ void receive(){
 		}
 		// Variable length finish
 
-
 		c_sum = c_sum%254;
                 if(c_sum == 0){
                         c_sum = 254;
@@ -39,7 +38,7 @@ void receive(){
 		if(checksum == c_sum){
 			uBit.serial.printf("OK\n");
 		}else{
-			uBit.serial.printf("A\n");
+			uBit.serial.printf("Recieve Error!\n");
 		}
                 count++;
 		fiber_sleep(1);
@@ -61,7 +60,7 @@ void receive_L(){
                 if(recL == count){
                         uBit.serial.printf("Complete\n");
                 }else{
-                        uBit.serial.printf("A\n");
+                        uBit.serial.printf("Recieve Error!\n");
                 }
                 fiber_sleep(1000);
 	}
