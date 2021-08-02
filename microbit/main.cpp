@@ -49,7 +49,7 @@ void send(){
 	while(true){
 		while(! uBit.buttonA.isPressed()) fiber_sleep(100);
 		uBit.serial.printf("received:%d characters\n", result.length());
-		uBit.serial.send(result, SYNC_SLEEP);
+		uBit.serial.send(result + "\n", SYNC_SLEEP);
 		fiber_sleep(1000);
 	}
 }
