@@ -8,7 +8,7 @@ int count = 0; // line count
 int recL = 0; // receive Line
 
 void header(){
-	recL = str.charAt(1); // receive Line
+	recL = (str.charAt(1)-100)*100 + str.charAt(2); // receive Line
 	result = ""; // clear
         count = 0; // count reset
 	uBit.serial.printf("header OK\n"); // operation check
