@@ -16,8 +16,11 @@
         let port;
         let textValue = "";
         const SplitValue = 16;
-        const HeaderValue = 2; // ["ID","Lines"]
+        const HeaderValue = 3; // ["ID","first 2 gigits of Lines","last 2 digits of Lines"]
         let reWrite_cnt = 0;
+
+        // write speed delay
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
         // LineBreak
         class LineBreakTransformer {
@@ -35,17 +38,16 @@
             }
         }
 
-
-        //Connect
+        // Connect
         document.getElementById("deviceConnect").onclick = async() =>{
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 9600 });
                 
-                //read
-                while (port.readable) {  
+                // read
+                while (port.readable) {
                     //const reader = port.readable.getReader();                  
-                    const reader = port.readable
+                    const reader = await port.readable
                         .pipeThrough(new TextDecoderStream())
                         .pipeThrough(new TransformStream(new LineBreakTransformer()))
                         .getReader();
@@ -66,7 +68,7 @@
                             if ((value.match(/Receive Error!/)) && (reWrite_cnt < 5)) {
                                 console.log("Receive Error!");
                                 reWrite_cnt++;
-                                await writeText();
+                                writeText();
                             }
                         }
                     } catch (error) {
@@ -81,28 +83,38 @@
             }
         };
         
-        //output
+        // output
         function addSerial(msg) {
             let textarea = document.getElementById('outputArea');
             textarea.value += msg;
             textarea.scrollTop = textarea.scrollHeight;
         }
 
-        //write function
+
+
+        // write function
         const writeText = async () => {
             let reg = new RegExp('.{1,' + SplitValue + '}', "g"); //1~16
             let splitText = textValue.match(reg);
             console.log(splitText);
 
             //////////////////////////////////////////////////////////
-            //header
+            // header
             const encoder = new TextEncoder();
             let header = new ArrayBuffer(HeaderValue+2);// HeaderValue+α
-            const writer = port.writable.getWriter();
+            const writer = await port.writable.getWriter();
             let dataviewHe = new DataView(header);
 
             dataviewHe.setUint8(0,255); //header id
-            dataviewHe.setUint8(1,(splitText.length+1)); //write lines
+            
+            // splitText.length: "1234" → "12","34"
+            let writeLines = splitText.length + 1;
+            let firstDigits = Math.floor(writeLines/100) + 100; // the first 2 digits (0=null... → +100)
+            let lastDigits = writeLines % 100; // the last 2 digits
+            dataviewHe.setUint8(1,firstDigits); //write lines
+            dataviewHe.setUint8(2,lastDigits); //write lines
+            //dataviewHe.setUint8(1,(splitText.length+1)); // write lines
+
             let checksum = 0;
             for (let i = 0; i < HeaderValue; i++) {
                 checksum += dataviewHe.getUint8(i);
@@ -111,8 +123,8 @@
             if (checksum == 0) {
                 checksum = 254;
             }
-            await dataviewHe.setUint8(HeaderValue,checksum);
-            await dataviewHe.setUint8(HeaderValue+1, encoder.encode("\n"));
+            dataviewHe.setUint8(HeaderValue,checksum);
+            dataviewHe.setUint8(HeaderValue+1, encoder.encode("\n"));
             console.log(header);
             await writer.write(header);
             //////////////////////////////////////////////////////////
@@ -130,20 +142,21 @@
                     checksum = 254;
                 }
 
-                await dataview.setUint8(splitText[i].length,checksum);
-                await dataview.setUint8(splitText[i].length+1, encoder.encode("\n"));
+                dataview.setUint8(splitText[i].length,checksum);
+                dataview.setUint8(splitText[i].length+1, encoder.encode("\n"));
                 console.log(buffer);
                 await writer.write(buffer);
+                await delay(100);
             }
             writer.releaseLock();
         };
         
-        //write button event
+        // write button event
         document.getElementById("writeData").onclick = async() =>{
             reWrite_cnt = 0;
             let text = document.getElementById("setText");
             textValue = text.value;
-            await writeText();
+            writeText();
         };
     </script>
 </head>
