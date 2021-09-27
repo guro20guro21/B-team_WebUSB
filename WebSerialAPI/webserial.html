@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+    <body>
+       <p><button id="deviceConnect">Connect</button></p>
+        write:<button id="writeData">write start</button><br>
+        <form>
+            <textarea name="setText" rows="5" cols="50" wrap="hard" type="text" id="setText"></textarea>
+        </form>
+        
+        <p>read:<br>
+        <textarea  rows="5" cols="50" id="outputArea" readonly></textarea></p>
+    </body>
+<head>
+    <meta charset="utf-8" />
+    <script>
+        let port;
+        let textValue = "";
+        const HeaderValue = 4; // ["送信行数の上2桁","送信行数の下2桁","区切り文字数","ID"]
+        let reWrite_cnt = 0;
+
+        // LineBreak
+        class LineBreakTransformer {
+            constructor() {
+                this.container = "";
+            }
+            transform(chunk, controller) {
+                this.container += chunk;
+                const lines = this.container.split("\n");
+                this.container = lines.pop();
+                lines.forEach(line => controller.enqueue(line));
+            }
+            flush(controller) {
+                controller.enqueue(this.container);
+            }
+        }
+
+        // Connect
+        document.getElementById("deviceConnect").onclick = async() =>{
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+                
+                // read
+                while (port.readable) {                
+                    const reader = await port.readable
+                        .pipeThrough(new TextDecoderStream())
+                        .pipeThrough(new TransformStream(new LineBreakTransformer()))
+                        .getReader();
+
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) {
+                                addSerial("Canceled\n");
+                                break;
+                            }
+                            console.log(value);
+                            addSerial(value + "\n");
+                            if ((value.match(/Receive Error!/)) && (reWrite_cnt < 1)) { // 再送信
+                                console.log("Receive Error!");
+                                reWrite_cnt++;
+                                writeText();
+                            }
+                        }
+                    } catch (error) {
+                        addSerial("Error: Read" + error + "\n");
+                    } finally {
+                        reader.releaseLock();
+                        
+                    }
+                }
+            } catch (error) {
+                addSerial("Error: Open" + error + "\n");
+            }
+        };
+        
+        // output
+        function addSerial(msg) {
+            let textarea = document.getElementById('outputArea');
+            textarea.value += msg;
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+
+        // write function
+        const writeText = async () => {
+            //////////////////////////////////////////////////////////
+            // padding and encode
+            // 固定長にするための空白埋めと文字列をエンコード
+            let padRight = textValue.length % 64;
+            for(; (padRight != 0) && (padRight < 64); padRight++){
+                textValue = textValue + " ";
+            }
+            const tx = new TextEncoder().encode(textValue);
+            console.log(tx);
+            //////////////////////////////////////////////////////////
+            // header
+            let bufferHe = new ArrayBuffer(HeaderValue);
+            const writer = port.writable.getWriter();
+            let dataviewHe = new DataView(bufferHe);
+
+            /* splitText.length: "1234" → "12","34"  MAX 9999行*/
+            let writeLines = Math.ceil(tx.length/16) + 1;              // 送信行数の計算+ヘッダー1行
+            let firstDigits = Math.floor(writeLines/100) + 100; // 送信行数上2桁の計算(0にならないように+100)
+            let lastDigits = writeLines % 100 + 100;            // 送信行数下2桁の計算
+            dataviewHe.setUint8(0,firstDigits); // write lines
+            dataviewHe.setUint8(1,lastDigits);  // write lines
+            dataviewHe.setUint8(2,64);          // splitValue
+            dataviewHe.setUint8(3,255);         // header id
+
+            console.log(bufferHe);
+            await writer.write(bufferHe);
+            //////////////////////////////////////////////////////////
+            // main text
+            // 1回の送信上限は20オクテット
+            let checksum = 0;
+            for (let i = 0; i < tx.length; i += 16) {
+                await writer.write(tx.subarray(i, i+16));
+                let splitText = tx.subarray(i, i+16);
+                console.log(splitText);
+                checksum += splitText.reduce((sum, element) => sum + element, 0);
+                if ((i+16)%64 == 0) {
+                    checksum = checksum % 254;
+                    if (checksum == 0) checksum = 254; // 例外処理(0と255はチェックサムに使わない)
+                    let bufferCS = new ArrayBuffer(1);
+                    let dataviewCS = new DataView(bufferCS);
+                    dataviewCS.setUint8(0,checksum);
+                    console.log(bufferCS);
+                    checksum = 0;
+                    await writer.write(bufferCS);
+                }
+
+            }
+            /////////////////////////////////////////////////////////////////////
+            writer.releaseLock();
+            
+        };
+        
+        // write button event
+        document.getElementById("writeData").onclick = async() =>{
+            reWrite_cnt = 0;
+            let text = document.getElementById("setText");
+            textValue = text.value;
+            writeText();
+        };
+    </script>
+</head>
+</html>
