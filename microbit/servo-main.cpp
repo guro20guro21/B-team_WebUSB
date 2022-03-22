@@ -41,25 +41,25 @@ void checksum(){
         c_sum = c_sum + result_c.charAt(j); // sum
 
         // add start
-        if(result_c.charAt(j-1) == 117 && result_c.charAt(j) == 112) // up
+        if(result_c.charAt(j-1) == 'u' && result_c.charAt(j) == 'p') // up
         {
           uBit.serial.printf("up\n");
           uBit.io.pin[1].setServoValue(100);
           uBit.io.pin[2].setServoValue(110);
           fiber_sleep(1000);
-        }else if(result_c.charAt(j-4) == 114 && result_c.charAt(j-3) == 105 && result_c.charAt(j-2) == 103 && result_c.charAt(j-1) == 104 && result_c.charAt(j) == 116) // right
+        }else if(result_c.charAt(j-4) == 'r' && result_c.charAt(j-3) == 'i' && result_c.charAt(j-2) == 'g' && result_c.charAt(j-1) == 'h' && result_c.charAt(j) == 't') // right
         {
           uBit.serial.printf("right\n");
           uBit.io.pin[1].setServoValue(100);
           uBit.io.pin[2].setServoValue(130);
           fiber_sleep(500);
-        }else if(result_c.charAt(j-3) == 108 && result_c.charAt(j-2) == 101 && result_c.charAt(j-1) == 102 && result_c.charAt(j) == 116) // left
+        }else if(result_c.charAt(j-3) == 'l' && result_c.charAt(j-2) == 'e' && result_c.charAt(j-1) == 'f' && result_c.charAt(j) == 't') // left
         {
           uBit.serial.printf("left\n");
           uBit.io.pin[1].setServoValue(80);
           uBit.io.pin[2].setServoValue(110);
           fiber_sleep(500);
-        }else if(result_c.charAt(j-3) == 100 && result_c.charAt(j-2) == 111 && result_c.charAt(j-1) == 119 && result_c.charAt(j) == 110) // down
+        }else if(result_c.charAt(j-3) == 'd' && result_c.charAt(j-2) == 'o' && result_c.charAt(j-1) == 'w' && result_c.charAt(j) == 'n') // down
         {
           uBit.serial.printf("down\n");
           uBit.io.pin[1].setServoValue(80);
